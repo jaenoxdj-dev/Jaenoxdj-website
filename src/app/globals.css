@@ -1,0 +1,304 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-space-grotesk);
+  --font-display: var(--font-anton);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-ice: var(--ice);
+  --color-ice-soft: var(--ice-soft);
+  --color-flare: var(--flare);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #05060b;
+  --foreground: #f2f6fb;
+  --card: #0b0e17;
+  --card-foreground: #f2f6fb;
+  --popover: #0b0e17;
+  --popover-foreground: #f2f6fb;
+  --primary: #22d3ee;
+  --primary-foreground: #05060b;
+  --secondary: #141826;
+  --secondary-foreground: #f2f6fb;
+  --muted: #10131e;
+  --muted-foreground: #8b93a7;
+  --accent: #161b2c;
+  --accent-foreground: #f2f6fb;
+  --destructive: #f43f5e;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: rgba(34, 211, 238, 0.6);
+  --ice: #22d3ee;
+  --ice-soft: #7deefb;
+  --flare: #e039d7;
+  --chart-1: #22d3ee;
+  --chart-2: #e039d7;
+  --chart-3: #a78bfa;
+  --chart-4: #34d399;
+  --chart-5: #fbbf24;
+  --sidebar: #0b0e17;
+  --sidebar-foreground: #f2f6fb;
+  --sidebar-primary: #22d3ee;
+  --sidebar-primary-foreground: #05060b;
+  --sidebar-accent: #161b2c;
+  --sidebar-accent-foreground: #f2f6fb;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(34, 211, 238, 0.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv01";
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: rgba(34, 211, 238, 0.35);
+    color: #f2f6fb;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-anton), var(--font-space-grotesk), sans-serif;
+  }
+  .text-glow-ice {
+    text-shadow:
+      0 0 18px rgba(34, 211, 238, 0.55),
+      0 0 60px rgba(34, 211, 238, 0.25);
+  }
+  .text-glow-flare {
+    text-shadow:
+      0 0 18px rgba(224, 57, 215, 0.55),
+      0 0 60px rgba(224, 57, 215, 0.25);
+  }
+  .glass {
+    background: rgba(9, 11, 19, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  .gradient-text {
+    background: linear-gradient(100deg, #7deefb 0%, #22d3ee 35%, #e039d7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stroke-text {
+    -webkit-text-stroke: 1px rgba(125, 238, 251, 0.35);
+    color: transparent;
+  }
+}
+
+/* ---------- marquee ---------- */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee-x 32s linear infinite;
+  will-change: transform;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ---------- equalizer bars ---------- */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.22);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq-bounce 1s ease-in-out infinite;
+  will-change: transform;
+}
+/* Low-power WebViews (e.g. WhatsApp in-app browser): ease continuous paint work */
+@media (max-width: 640px) {
+  .eq-bar {
+    will-change: auto;
+    animation-duration: 2s;
+  }
+  .animate-marquee {
+    animation-duration: 44s;
+  }
+}
+
+/* ---------- pulse glow for CTA ----------
+   Compositor-friendly: glow lives on a ::before pseudo-element and only its
+   opacity is animated (transform/opacity never trigger layout or repaint of
+   the host element — vital for low-power WebViews like WhatsApp's browser). */
+@keyframes glow-opacity {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.animate-glow-pulse {
+  position: relative;
+  isolation: isolate;
+}
+.animate-glow-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 0 12px 2px rgba(34, 211, 238, 0.55),
+    0 0 44px rgba(34, 211, 238, 0.45);
+  animation: glow-opacity 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.animate-flare-pulse {
+  position: relative;
+  isolation: isolate;
+}
+.animate-flare-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 0 18px rgba(224, 57, 215, 0.55),
+    0 0 54px rgba(224, 57, 215, 0.4);
+  animation: glow-opacity 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ---------- slow float ---------- */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+/* ---------- spin vinyl ---------- */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 9s linear infinite;
+}
+
+/* ---------- scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #07090f;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #164e5a, #22d3ee55);
+  border-radius: 8px;
+  border: 2px solid #07090f;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #22d3ee, #e039d799);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .eq-bar,
+  .animate-glow-pulse,
+  .animate-flare-pulse,
+  .animate-float,
+  .animate-spin-slow {
+    animation: none;
+  }
+  .animate-glow-pulse::before,
+  .animate-flare-pulse::before {
+    animation: none;
+    opacity: 0.6;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Background tab / in-app webview suspended: stop every continuous CSS
+   animation so the WebView never burns CPU while not on screen. */
+html.anim-paused .animate-marquee,
+html.anim-paused .eq-bar,
+html.anim-paused .animate-glow-pulse::before,
+html.anim-paused .animate-flare-pulse::before,
+html.anim-paused .animate-float,
+html.anim-paused .animate-spin-slow {
+  animation-play-state: paused !important;
+}
