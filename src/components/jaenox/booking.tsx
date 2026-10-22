@@ -30,6 +30,8 @@ const formSchema = z.object({
   setLength: z.string().optional(),
   budget: z.string().optional(),
   message: z.string().trim().min(10, "Give a few details about the event (10+ characters)"),
+  // Honeypot: invisible to humans, irresistible to bots. Never rendered visibly.
+  website: z.string().optional(),
 });
 type FormValues = z.infer<typeof formSchema>;
 
@@ -84,6 +86,7 @@ export function Booking() {
       setLength: "",
       budget: "",
       message: "",
+      website: "",
     },
   });
 
@@ -138,6 +141,16 @@ export function Booking() {
             className="rounded-2xl border border-border bg-card/60 p-6 sm:p-8"
             noValidate
           >
+            {/* Spam trap — hidden from humans, auto-filled by bots */}
+            <input
+              type="text"
+              id="bk-website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+              {...register("website")}
+            />
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="bk-name" className="text-xs font-bold uppercase tracking-[0.16em] text-foreground/80">
