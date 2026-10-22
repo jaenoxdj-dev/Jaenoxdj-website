@@ -20,7 +20,46 @@ const bookingSchema = z.object({
 type BookingInput = z.infer<typeof bookingSchema>;
 
 const NOTIFY_EMAIL = process.env.BOOKING_NOTIFY_EMAIL || "jaenoxdj@gmail.com";
-const FROM = "JAENOX Bookings <onboarding@resend.dev>";
+const FROM = process.env.BOOKING_FROM_EMAIL || "JAENOX Bookings <onboarding@resend.dev>";
+
+/* ---------------- spam shield ---------------- */
+
+// Honeypot: real users never see or fill this hidden field; bots do.
+// We answer with fake success so bots learn nothing.
+function isBot(body: unknown): boolean {
+  if (!body || typeof body !== "object") return true;
+  const website = (body as Record<string, unknown>).website;
+  return typeof website === "string" && website.trim().length > 0;
+}
+
+// Simple in-memory rate limit: max 5 submissions per IP per 10 minutes.
+const RATE_LIMIT = 5;
+const WINDOW_MS = 10 * 60 * 1000;
+const hits = new Map<string, { count: number; reset: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = hits.get(ip);
+  if (!entry || entry.reset < now) {
+    hits.set(ip, { count: 1, reset: now + WINDOW_MS });
+    if (hits.size > 500) {
+      for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+    }
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT;
+}
+
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+/* ---------------- shared helpers ---------------- */
 
 function escapeHtml(s: string): string {
   return s
@@ -84,7 +123,7 @@ function buildHtml(b: BookingInput): string {
   <div style="max-width:560px;margin:0 auto;background:#141419;border:1px solid #26262e;border-radius:12px;overflow:hidden;">
     <div style="padding:20px 24px;border-bottom:1px solid #26262e;background:#101014;">
       <div style="color:#f9fafb;font-size:18px;font-weight:bold;letter-spacing:0.5px;">New booking request</div>
-      <div style="color:#9ca3af;font-size:13px;margin-top:4px;">via the jaenox website booking form</div>
+      <div style="color:#9ca3af;font-size:13px;margin-top:4px;">via the jaenox.com booking form</div>
     </div>
     <table style="width:100%;border-collapse:collapse;">
       ${detailRow("Name", b.name)}
@@ -104,7 +143,7 @@ function buildHtml(b: BookingInput): string {
 
 function buildText(b: BookingInput): string {
   return [
-    "New booking request via jaenox website",
+    "New booking request via jaenox.com",
     "",
     `Name: ${b.name}`,
     `Email: ${b.email}`,
@@ -121,6 +160,55 @@ function buildText(b: BookingInput): string {
     .filter(Boolean)
     .join("\n");
 }
+
+function buildFanHtml(b: BookingInput): string {
+  const firstName = escapeHtml(b.name.split(" ")[0]);
+  return `<div style="background:#0b0b0f;padding:24px;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#141419;border:1px solid #26262e;border-radius:12px;overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid #26262e;background:#101014;">
+      <div style="color:#f9fafb;font-size:18px;font-weight:bold;letter-spacing:0.5px;">Request received</div>
+      <div style="color:#9ca3af;font-size:13px;margin-top:4px;">jaenox.com bookings desk</div>
+    </div>
+    <div style="padding:24px;color:#f9fafb;font-size:14px;line-height:1.7;">
+      <p style="margin:0 0 12px;">Hi ${firstName},</p>
+      <p style="margin:0 0 12px;">Thanks for reaching out — your booking request is in and has landed straight in JAENOX&apos;s inbox.</p>
+      <p style="margin:0;">JAENOX will get back to you within 24–48 hours. If it&apos;s urgent, email <a href="mailto:jaenoxdj@gmail.com" style="color:#22d3ee;">jaenoxdj@gmail.com</a> directly.</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      ${detailRow("Event type", b.eventType)}
+      ${detailRow("Event date", b.eventDate)}
+      ${detailRow("Location", b.location)}
+      ${detailRow("Set length", b.setLength)}
+      ${detailRow("Budget", b.budget)}
+    </table>
+    <div style="padding:16px 24px;background:#101014;border-top:1px solid #26262e;color:#6b7280;font-size:12px;">
+      This is an automatic confirmation — no need to reply. · jaenox.com
+    </div>
+  </div>
+</div>`;
+}
+
+function buildFanText(b: BookingInput): string {
+  return [
+    `Hi ${b.name.split(" ")[0]},`,
+    "",
+    "Thanks for reaching out - your booking request is in and has landed straight in JAENOX's inbox.",
+    "",
+    `Event type: ${b.eventType}`,
+    b.eventDate ? `Event date: ${b.eventDate}` : "",
+    b.location ? `Location: ${b.location}` : "",
+    b.setLength ? `Set length: ${b.setLength}` : "",
+    b.budget ? `Budget: ${b.budget}` : "",
+    "",
+    "JAENOX will get back to you within 24-48 hours. If it's urgent, email jaenoxdj@gmail.com directly.",
+    "",
+    "(This is an automatic confirmation - no need to reply.)",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/* ---------------- emails ---------------- */
 
 async function sendBookingEmail(id: string, b: BookingInput): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -161,9 +249,61 @@ async function sendBookingEmail(id: string, b: BookingInput): Promise<void> {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function sendFanAutoReply(b: BookingInput): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+
+  const firstName = b.name.split(" ")[0];
   try {
-    const body = await req.json();
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [b.email],
+        subject: `Thanks ${firstName} - your booking request is in`,
+        html: buildFanHtml(b),
+        text: buildFanText(b),
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.warn("[bookings] fan auto-reply skipped:", res.status, detail);
+    } else {
+      console.log("[bookings] fan auto-reply sent to", b.email);
+    }
+  } catch (e) {
+    console.warn("[bookings] fan auto-reply error:", e);
+  }
+}
+
+/* ---------------- API ---------------- */
+
+export async function POST(req: NextRequest) {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
+  }
+
+  // Bot honeypot: pretend everything is fine, save nothing, send nothing.
+  if (isBot(body)) {
+    return NextResponse.json({ ok: true, id: "ok" }, { status: 201 });
+  }
+
+  if (isRateLimited(clientIp(req))) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests - please try again later or email jaenoxdj@gmail.com." },
+      { status: 429 }
+    );
+  }
+
+  try {
     const parsed = bookingSchema.safeParse(body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -188,6 +328,7 @@ export async function POST(req: NextRequest) {
     });
 
     await sendBookingEmail(booking.id, b);
+    await sendFanAutoReply(b);
 
     return NextResponse.json({ ok: true, id: booking.id }, { status: 201 });
   } catch (err) {
